@@ -14,7 +14,6 @@ class Parser:
 
         :return: PDF-файл
         """
-
         try:
             return pm.open(self.path)
         except pm.FileNotFoundError:

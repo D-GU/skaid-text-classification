@@ -1,47 +1,75 @@
 import re
-import ssl
 
 import nltk
+import numpy as np
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 from parser import Parser
 
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    pass
-else:
-    ssl._create_default_https_context = _create_unverified_https_context
 
 # Необходимо скачать при первом запуске
-nltk.download("stopwords")
-nltk.download("punkt_tab")
-nltk.download("wordnet")
+# nltk.download("stopwords")
+# nltk.download("punkt_tab")
+# nltk.download("wordnet")
 
 
 class TextPreprocessor:
     def __init__(self, text: str):
         self.text = text
-        self.lemmatize = WordNetLemmatizer()  # приведение слова к его нормальной форме
+        self.lemmatize = WordNetLemmatizer()
         self.stopwords = set(stopwords.words("english"))
 
-    def __delete_stop_words(self):
+    def __clean_text(self):
         """
-        Метод, удаляющий из текста стоп-слова.
-        Под стоп-словами обычно понимаются артикли, междометия, союзы и т.д.,
-        которые не несут смысловой нагрузки.
+        Метод обрабатывающий исходный текст.
+        В методе из текста удаляются все ссылки, специальные символы и т.д.
+        Проводится лемматизация и удаление стоп слов.
 
-        :return: text: str - очищенный от стоп-слов слов текст
+        :return: self.text: str - Обработанный текст
         """
+        # Удаляем из текста все URL и ссылки
+        self.text = re.sub(r"http\S+", "", self.text)
+
+        # Приводим все входные данные к нижнему регистру
+        self.text = self.text.lower()
+
+        # Убираем неалфавитные символы
+        self.text = re.sub("[^a-zA-Z\s]", "", self.text)
+
+        # Удаляем стоп-слова
+        tokens = word_tokenize(self.text, language="english")  # токенизация
+        tokens = [self.lemmatize.lemmatize(token) for token in tokens if not token in self.stopwords]
+
+        return tokens
+
+    @staticmethod
+    def __vectorize(tokens):
+        """
+        Векторизация текста по методу TF-IDF,
+        который является статистической мерой для оценки важности слова в документе.
+
+        :return: np.array(dense_matrix) - Возвращаем плотную матрицу в виде numpy-массива
+        """
+
+        vectorizer = TfidfVectorizer()
+
+        # Используем vectorizer, чтобы трансформировать текст в векторную форму
+        counts_matrix = vectorizer.fit_transform(tokens)
+
+        # Превращаем полученную матрицу в плотную матрицу
+        dense_matrix = counts_matrix.todense()
+
+        return np.array(dense_matrix)
 
     def preprocess(self):
-        self.text = re.sub("[^a-zA-Z]", " ", self.text)
-        self.text = word_tokenize(self.text, language="english")
-        print(self.text)
+        tokens = self.__clean_text()
+        return self.__vectorize(tokens)
 
 
 if __name__ == "__main__":
     text = Parser("../../JPMartinez2004.pdf").parse()
     preprocessor = TextPreprocessor(text).preprocess()
+    print(preprocessor)
