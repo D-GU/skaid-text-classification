@@ -2,11 +2,11 @@ import pymupdf as pm
 
 
 class Parser:
-    def __init__(self, path):
-        self.path = path
-        self.__document = self.__open()
+    def __call__(self, path: str):
+        document = self.__open(path)
+        return self.__get_text(document)
 
-    def __open(self):
+    def __open(self, path: str):
         """
         Метод, открывающий PDF-файл. Если указанный путь к файлу неверный,
         то срабатывает исключение FileNotFound и пользователь уведомляется о том,
@@ -15,11 +15,11 @@ class Parser:
         :return: PDF-файл
         """
         try:
-            return pm.open(self.path)
+            return pm.open(path)
         except pm.FileNotFoundError:
-            raise Exception(f"Указанный файл: {self.path} не найден.")
+            raise Exception(f"Указанный файл: {path} не найден.")
 
-    def __get_text(self):
+    def __get_text(self, document):
         """
         Метод, позволяющий распарсить текст из указанного PDF-файла.
         Если по итогам парсинга не было найдено текста, то срабатывает исключение,
@@ -29,7 +29,7 @@ class Parser:
         """
         parsed_text = ""
 
-        for page in self.__document:
+        for page in document:
             parsed_text += page.get_text()
 
         if not parsed_text or parsed_text.strip() == "":
@@ -38,10 +38,3 @@ class Parser:
             )
 
         return parsed_text
-
-    def parse(self):
-        return self.__get_text()
-
-
-if __name__ == "__main__":
-    parser = Parser("../../JPMartinez2004.pdf").parse()

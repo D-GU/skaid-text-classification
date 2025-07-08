@@ -9,7 +9,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from parser import Parser
 
-
 # Необходимо скачать при первом запуске
 # nltk.download("stopwords")
 # nltk.download("punkt_tab")
@@ -56,7 +55,13 @@ class TextPreprocessor:
         :return: np.array(dense_matrix) - Возвращаем плотную матрицу в виде numpy-массива
         """
 
-        vectorizer = TfidfVectorizer()
+        # Создаем векторизатор
+        vectorizer = TfidfVectorizer(
+            tokenizer=lambda x: x,      # текст уже разбит на токены
+            preprocessor=lambda x: x,   # текст уже обработан
+            token_pattern=None,         # отключаем regex-токенизацию
+            lowercase=False             # текс уже приведен к нижнему регистру
+        )
 
         # Используем vectorizer, чтобы трансформировать текст в векторную форму
         counts_matrix = vectorizer.fit_transform(tokens)
@@ -70,9 +75,5 @@ class TextPreprocessor:
         tokens = self.__clean_text(text)
         return self.__vectorize(tokens)
 
-
-if __name__ == "__main__":
-    text = Parser("../../JPMartinez2004.pdf").parse()
-    preprocessor = TextPreprocessor()
-    txt = preprocessor(text)
-    print(txt)
+if __name__ == '__main__':
+    parser = Parser()
