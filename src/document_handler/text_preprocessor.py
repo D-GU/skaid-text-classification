@@ -17,12 +17,14 @@ from parser import Parser
 
 
 class TextPreprocessor:
-    def __init__(self, text: str):
-        self.text = text
+    def __init__(self):
         self.lemmatize = WordNetLemmatizer()
         self.stopwords = set(stopwords.words("english"))
 
-    def __clean_text(self):
+    def __call__(self, text: str):
+        return self.preprocess(text)
+
+    def __clean_text(self, text: str):
         """
         Метод обрабатывающий исходный текст.
         В методе из текста удаляются все ссылки, специальные символы и т.д.
@@ -31,16 +33,16 @@ class TextPreprocessor:
         :return: self.text: str - Обработанный текст
         """
         # Удаляем из текста все URL и ссылки
-        self.text = re.sub(r"http\S+", "", self.text)
+        text = re.sub(r"http\S+", "", text)
 
         # Приводим все входные данные к нижнему регистру
-        self.text = self.text.lower()
+        text = text.lower()
 
         # Убираем неалфавитные символы
-        self.text = re.sub("[^a-zA-Z\s]", "", self.text)
+        text = re.sub("[^a-zA-Z\s]", "", text)
 
         # Удаляем стоп-слова
-        tokens = word_tokenize(self.text, language="english")  # токенизация
+        tokens = word_tokenize(text, language="english")  # токенизация
         tokens = [self.lemmatize.lemmatize(token) for token in tokens if not token in self.stopwords]
 
         return tokens
@@ -64,12 +66,13 @@ class TextPreprocessor:
 
         return np.array(dense_matrix)
 
-    def preprocess(self):
-        tokens = self.__clean_text()
+    def preprocess(self, text: str):
+        tokens = self.__clean_text(text)
         return self.__vectorize(tokens)
 
 
 if __name__ == "__main__":
     text = Parser("../../JPMartinez2004.pdf").parse()
-    preprocessor = TextPreprocessor(text).preprocess()
-    print(preprocessor)
+    preprocessor = TextPreprocessor()
+    txt = preprocessor(text)
+    print(txt)
