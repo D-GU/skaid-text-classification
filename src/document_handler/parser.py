@@ -6,7 +6,8 @@ class Parser:
         document = self.__open(path)
         return self.__get_text(document)
 
-    def __open(self, path: str):
+    @staticmethod
+    def __open(path: str):
         """
         Метод, открывающий PDF-файл. Если указанный путь к файлу неверный,
         то срабатывает исключение FileNotFound и пользователь уведомляется о том,
@@ -19,7 +20,8 @@ class Parser:
         except pm.FileNotFoundError:
             raise Exception(f"Указанный файл: {path} не найден.")
 
-    def __get_text(self, document):
+    @staticmethod
+    def __get_text(document):
         """
         Метод, позволяющий распарсить текст из указанного PDF-файла.
         Если по итогам парсинга не было найдено текста, то срабатывает исключение,

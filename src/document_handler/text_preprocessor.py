@@ -7,7 +7,8 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from parser import Parser
+from src.document_handler.parser import Parser
+
 
 # Необходимо скачать при первом запуске
 # nltk.download("stopwords")
@@ -57,10 +58,10 @@ class TextPreprocessor:
 
         # Создаем векторизатор
         vectorizer = TfidfVectorizer(
-            tokenizer=lambda x: x,      # текст уже разбит на токены
-            preprocessor=lambda x: x,   # текст уже обработан
-            token_pattern=None,         # отключаем regex-токенизацию
-            lowercase=False             # текс уже приведен к нижнему регистру
+            tokenizer=lambda x: x,  # текст уже разбит на токены
+            preprocessor=lambda x: x,  # текст уже обработан
+            token_pattern=None,  # отключаем regex-токенизацию
+            lowercase=False  # текс уже приведен к нижнему регистру
         )
 
         # Используем vectorizer, чтобы трансформировать текст в векторную форму
@@ -68,12 +69,16 @@ class TextPreprocessor:
 
         # Превращаем полученную матрицу в плотную матрицу
         dense_matrix = counts_matrix.todense()
-
         return np.array(dense_matrix)
 
     def preprocess(self, text: str):
         tokens = self.__clean_text(text)
         return self.__vectorize(tokens)
 
+
 if __name__ == '__main__':
     parser = Parser()
+    txt = parser("../../JPMartinez2004.pdf")
+
+    pre = TextPreprocessor()
+    print(pre(txt))
