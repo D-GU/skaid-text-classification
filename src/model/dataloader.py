@@ -2,7 +2,7 @@ import json
 
 import torch
 from sklearn.datasets import fetch_20newsgroups
-from torch.utils.data import Dataset, DataLoader, DataLoader
+from torch.utils.data import Dataset, DataLoader
 
 from src.document_handler.text_preprocessor import TextPreprocessor
 from src.document_handler.vectorizer import Vectorizer
@@ -11,13 +11,13 @@ CATEGORIES = json.load(open("categories.json"))
 
 
 class NewsgroupsDataset(Dataset):
-    def __init__(self, subset="train"):
+    def __init__(self, subset="train", vectorizer: Vectorizer = None):
         self.bundle = fetch_20newsgroups(subset=subset, shuffle=True, random_state=42)
         self.raw_texts = self.bundle.data
         self.targets = self.bundle.target
 
         self.cleaner = TextPreprocessor()
-        self.vectorizer = Vectorizer()
+        self.vectorizer = vectorizer or Vectorizer()
 
         self.tokens_list = [self.cleaner(text) for text in self.raw_texts]
 
@@ -35,22 +35,30 @@ class NewsgroupsDataset(Dataset):
         return self.vectors[idx], torch.tensor(self.targets[idx], dtype=torch.long)
 
 
-def get_dataloader(
-        subset: str, batch_size: int, shuffle: bool, num_workers: int
-):
-    dl = DataLoader(
-        NewsgroupsDataset(subset),
-        batch_size=batch_size,
-        shuffle=shuffle,
-        num_workers=num_workers
+if __name__ == "__main__":
+    train_dataset = NewsgroupsDataset(subset="train")
+
+    test_dataset = NewsgroupsDataset(
+        subset="test",
+        vectorizer=train_dataset.vectorizer
     )
 
-    return dl
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=32,
+        shuffle=True,
+        num_workers=4,  # по желанию
+        pin_memory=True  # по желанию для GPU
+    )
 
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=32,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=True
+    )
 
-if __name__ == "__main__":
-    dl = get_dataloader("train", 32, False, 1)
-    x, y = next(iter(dl))
-    print(x)
-
-
+    for batch_idx, (features, labels) in enumerate(train_loader):
+        print(f"Batch {batch_idx}: features {features.shape}, labels {labels.shape}")
+        break
