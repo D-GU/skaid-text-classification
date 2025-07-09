@@ -1,19 +1,61 @@
-from dataclasses import dataclass, asdict
-
 import torch
+from pytorch_lightning import Trainer
 
-
-@dataclass
-class ModelCFG:
-    seed: int = 42
-    device: str = "cuda" if torch.cuda.is_available() else "cpu"
-    hidden_size: int = 128
-    dropout: float = 0.2
-    lr: float = 1e-2
-    batch_size: int = 32
-    num_workers: int = 4
-    num_epochs: int = 20
-
+from src.document_handler.parser import Parser
+from src.document_handler.text_preprocessor import TextPreprocessor
+from src.model.model import TextClassifier
+from src.model.model_cfg import ModelCFG
 
 cfg = ModelCFG()
-cfg_dict = asdict(cfg)
+
+
+def train(_model, _filename: str):
+    # Перемножение матриц с уменьшенной точностью для увеличения производительности
+    torch.set_float32_matmul_precision("high")
+
+    trainer = Trainer(
+        max_epochs=cfg.num_epochs,
+        accelerator=cfg.accelerator,
+        devices=cfg.device_id,
+        precision=cfg.precision,
+        accumulate_grad_batches=2,
+        enable_progress_bar=True
+    )
+
+    # Обучаем модель
+    trainer.fit(_model)
+
+    # Проверяем ее на тестовом датасете
+    results = trainer.test(_model)
+    print(results)
+
+    # Сохраняем все параметры модели
+    _model = _model.to(cfg.device)
+    torch.save(_model.state_dict(), _filename)
+
+
+if __name__ == "__main__":
+    cfg = ModelCFG()
+    model = TextClassifier(cfg)
+    train(model, "../../document_classifier.pth")
+
+    model.load_state_dict(torch.load("../../document_classifier.pth", weights_only=True))
+
+
+    # parser = Parser()
+    # document = parser("../../2306.17358v3.pdf")
+
+    # txtpreprocessor = TextPreprocessor()
+    # tokens = txtpreprocessor()
+
+    # vectorizer = model.train_dataloader().dataset.vectorizer
+    # tks = torch.tensor(vectorizer.transform(tokens))
+    # x = torch.tensor(tks).unsqueeze(0)
+
+    # model.eval()
+    #
+    # with torch.no_grad():
+    #     logits = model(x)
+    #     pred = logits.argmax(dim=1).item()
+    #
+    # print(pred)

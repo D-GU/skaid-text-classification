@@ -211,6 +211,6 @@ __marimo__/
 .DS_Store
 .ds_store
 
-# PDFS
-JPMartinez2004.pdf
-2306.17358v3.pdf
+
+# Torch models
+*.pth

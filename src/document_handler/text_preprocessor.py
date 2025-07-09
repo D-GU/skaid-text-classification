@@ -4,12 +4,10 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
-from src.document_handler.parser import Parser
-
 # Необходимо скачать при первом запуске
-nltk.download("stopwords")
-nltk.download("punkt_tab")
-nltk.download("wordnet")
+nltk.download("stopwords", quiet=True)
+nltk.download("punkt_tab", quiet=True)
+nltk.download("wordnet", quiet=True)
 
 
 class TextPreprocessor:
@@ -42,11 +40,3 @@ class TextPreprocessor:
         # Удаляем стоп-слова
         tokens = [token for token in tokens if token not in self.stopwords]
         return tokens
-
-
-if __name__ == '__main__':
-    parser = Parser()
-    txt = parser("../../2306.17358v3.pdf")
-
-    pre = TextPreprocessor()
-    print(pre(txt))
