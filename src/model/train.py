@@ -32,30 +32,3 @@ def train(_model, _filename: str):
     # Сохраняем все параметры модели
     _model = _model.to(cfg.device)
     torch.save(_model.state_dict(), _filename)
-
-
-if __name__ == "__main__":
-    cfg = ModelCFG()
-    model = TextClassifier(cfg)
-    train(model, "../../document_classifier.pth")
-
-    model.load_state_dict(torch.load("../../document_classifier.pth", weights_only=True))
-
-
-    # parser = Parser()
-    # document = parser("../../2306.17358v3.pdf")
-
-    # txtpreprocessor = TextPreprocessor()
-    # tokens = txtpreprocessor()
-
-    # vectorizer = model.train_dataloader().dataset.vectorizer
-    # tks = torch.tensor(vectorizer.transform(tokens))
-    # x = torch.tensor(tks).unsqueeze(0)
-
-    # model.eval()
-    #
-    # with torch.no_grad():
-    #     logits = model(x)
-    #     pred = logits.argmax(dim=1).item()
-    #
-    # print(pred)
