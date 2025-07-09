@@ -211,8 +211,6 @@ __marimo__/
 .DS_Store
 .ds_store
 
-# Test pdf
+# PDFS
 JPMartinez2004.pdf
-
-# 20Newsgroup Dataset
-20News/
+2306.17358v3.pdf

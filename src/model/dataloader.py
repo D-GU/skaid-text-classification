@@ -1,53 +1,56 @@
-import os
 import json
-import glob
 
-from torch.utils.data import Dataset
+import torch
+from sklearn.datasets import fetch_20newsgroups
+from torch.utils.data import Dataset, DataLoader, DataLoader
 
 from src.document_handler.text_preprocessor import TextPreprocessor
+from src.document_handler.vectorizer import Vectorizer
 
 CATEGORIES = json.load(open("categories.json"))
 
 
-class DatasetNews(Dataset):
-    def __init__(self, path: str):
-        self.text_paths = [txt_path for txt_path in sorted(glob.glob(f"{path}/*"))]
+class NewsgroupsDataset(Dataset):
+    def __init__(self, subset="train"):
+        self.bundle = fetch_20newsgroups(subset=subset, shuffle=True, random_state=42)
+        self.raw_texts = self.bundle.data
+        self.targets = self.bundle.target
 
-        self.preprocessor = TextPreprocessor()
-        self.categories = CATEGORIES
+        self.cleaner = TextPreprocessor()
+        self.vectorizer = Vectorizer()
 
-        self.cls_names = {}
+        self.tokens_list = [self.cleaner(text) for text in self.raw_texts]
 
-        for idx, txt_path in enumerate(self.text_paths):
-            cls_name = self.__get_class_name(txt_path)
-            self.cls_names[cls_name] = idx
+        # 2) строим единый словарь по всем документам (только на train)
+        if subset == "train":
+            self.vectorizer.fit(self.tokens_list)
 
-    @staticmethod
-    def __get_class_name(path):
-        return os.path.basename(path)[0:-4]
-
-    @staticmethod
-    def __read(filepath: str):
-        text = None
-        with open(filepath, encoding="windows-1252") as file:
-            text = file.read()
-        return text
+        # 3) векторизуем
+        self.vectors = [torch.tensor(self.vectorizer.transform(token)) for token in self.tokens_list]
 
     def __len__(self):
-        return len(self.text_paths)
+        return len(self.vectors)
 
-    def __getitem__(self, index):
-        # Считаем текст
-        text_path = self.text_paths[index]
-        text = self.__read(text_path)
+    def __getitem__(self, idx):
+        return self.vectors[idx], torch.tensor(self.targets[idx], dtype=torch.long)
 
-        # Векторизируем текст
-        x = self.preprocessor(text)
-        cls_name = self.__get_class_name(text_path)
-        target = self.cls_names[cls_name]
 
-        return x, target
+def get_dataloader(
+        subset: str, batch_size: int, shuffle: bool, num_workers: int
+):
+    dl = DataLoader(
+        NewsgroupsDataset(subset),
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers
+    )
+
+    return dl
 
 
 if __name__ == "__main__":
-    ds = DatasetNews("../../20News")
+    dl = get_dataloader("train", 32, False, 1)
+    x, y = next(iter(dl))
+    print(x)
+
+
